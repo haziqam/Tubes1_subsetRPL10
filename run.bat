@@ -18,7 +18,11 @@ timeout /t 3
 cd ../../JavaBot_1/target/ 
 start "" java -jar JavaBot.jar
 timeout /t 3
+cd ../../IdleBot/target/
+start "" java -jar JavaBot.jar
+timeout /t 3
 cd ../../JavaBot/target/
 start "" java -jar JavaBot.jar
+timeout /t 3
 
 pause

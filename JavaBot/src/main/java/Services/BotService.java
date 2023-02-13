@@ -10,6 +10,7 @@ public class BotService {
     private GameObject bot;
     private PlayerAction playerAction;
     private GameState gameState;
+    private static boolean afterburnerStatus;
 
     public BotService() {
         this.playerAction = new PlayerAction();
@@ -37,14 +38,23 @@ public class BotService {
         playerAction.action = PlayerActions.FORWARD;
         playerAction.heading = new Random().nextInt(360);
 
-        if (!gameState.getGameObjects().isEmpty()) {
-            var foodList = gameState.getGameObjects()
-                    .stream().filter(item -> item.getGameObjectType() == ObjectTypes.FOOD)
-                    .sorted(Comparator
-                            .comparing(item -> getDistanceBetween(bot, item)))
-                    .collect(Collectors.toList());
-
-            playerAction.heading = getHeadingBetween(foodList.get(0));
+        if (bot.getSize() > 20) {
+            playerAction.action = PlayerActions.STARTAFTERBURNER; 
+            afterburnerStatus = true;       
+        }
+        else  {
+            if (afterburnerStatus && bot.getSize() < 15) {
+                playerAction.action = PlayerActions.STOPAFTERBURNER;
+            }
+            else if (!gameState.getGameObjects().isEmpty()) {
+                var foodList = gameState.getGameObjects()
+                        .stream().filter(item -> item.getGameObjectType() == ObjectTypes.FOOD)
+                        .sorted(Comparator
+                                .comparing(item -> getDistanceBetween(bot, item)))
+                        .collect(Collectors.toList());
+    
+                playerAction.heading = getHeadingBetween(foodList.get(0));
+            }
         }
 
         this.playerAction = playerAction;

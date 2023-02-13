@@ -4,8 +4,8 @@ public enum ObjectTypes {
   PLAYER(1),
   FOOD(2),
   WORMHOLE(3),
-  GAS_CLOUD(4),
-  ASTEROID_FIELD(5),
+  GASCLOUD(4),
+  ASTEROIDFIELD(5),
   TORPEDOSALVO(6),
   SUPERFOOD(7),
   SUPERNOVAPICKUP(8),
@@ -14,6 +14,9 @@ public enum ObjectTypes {
   SHIELD(11);
   
   public final Integer value;
+  // Tambahan atribut: profit/bobot setiap objek. Negatif jika harus dihindari, positif jika harus dikejar
+  // dan nol jika perlu pertimbangan lain (misalnya player)
+  private final Integer profit;
 
   ObjectTypes(Integer value) {
     this.value = value;
@@ -25,5 +28,9 @@ public enum ObjectTypes {
     }
 
     throw new IllegalArgumentException("Value not found");
+  }
+
+  public Integer getProfit() {
+    return this.profit;
   }
 }

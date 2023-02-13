@@ -75,7 +75,7 @@ public class GameObject {
   public static GameObject FromStateList(UUID id, List<Integer> stateList)
   {
     if (stateList.get(3) == 1) 
-    { // Untuk kasus player (gameObjectType = 1)
+    { // Untuk kasus player (gameObjectType == 1)
       Position position = new Position(stateList.get(4), stateList.get(5));
       return new GameObject(id, stateList.get(0), stateList.get(1), stateList.get(2), position, 
       ObjectTypes.valueOf(stateList.get(3)), stateList.get(6), stateList.get(7), stateList.get(8), 
