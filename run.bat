@@ -15,13 +15,13 @@ start "" dotnet Logger.dll
 
 :: Bots
 timeout /t 3
-cd ../../JavaBot_1/target/ 
+cd ../../subsetRPL10/target/ 
 start "" java -jar JavaBot.jar
 timeout /t 3
-cd ../../IdleBot/target/
+cd ../../chaseBot/target/
 start "" java -jar JavaBot.jar
 timeout /t 3
-cd ../../JavaBot/target/
+cd ../../hungryBot/target/
 start "" java -jar JavaBot.jar
 timeout /t 3
 
