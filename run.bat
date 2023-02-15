@@ -18,7 +18,7 @@ timeout /t 3
 cd ../../subsetRPL10/target/ 
 start "" java -jar JavaBot.jar
 timeout /t 3
-cd ../../chaseBot/target/
+cd ../../avoidBot/target/
 start "" java -jar JavaBot.jar
 timeout /t 3
 cd ../../hungryBot/target/
