@@ -42,14 +42,14 @@ public class BotService {
 
         //List yang berisi bot lain terurut berdasarkan jarak
         List<GameObject> dangerousPlayerList = gameState.getPlayerGameObjects().stream()
-                                    .filter(item -> item.getSize() > botSize)
+                                    .filter(item -> (item.getSize() > botSize && getDistanceBetween(bot,item) <0.4*worldRadius))
                                     .sorted((Comparator
                                     .comparing(item -> getDistanceBetween(bot, item))))
                                     .collect(Collectors.toList());
 
         //List yang berisi object lain yang berbahaya
         List<GameObject> avoidObjectList = gameState.getGameObjects().stream()
-                                    .filter(item -> item.getGameObjectType() == ObjectTypes.GASCLOUD || item.getGameObjectType() == ObjectTypes.TORPEDOSALVO || item.getGameObjectType() == ObjectTypes.SUPERNOVABOMB || item.getGameObjectType() == ObjectTypes.ASTEROIDFIELD && getDistanceBetween(bot,item) < 0.2*worldRadius)
+                                    .filter(item -> ((item.getGameObjectType() == ObjectTypes.GASCLOUD || item.getGameObjectType() == ObjectTypes.TORPEDOSALVO || item.getGameObjectType() == ObjectTypes.SUPERNOVABOMB || item.getGameObjectType() == ObjectTypes.ASTEROIDFIELD) && getDistanceBetween(bot,item) < 0.2*worldRadius))
                                     .sorted(Comparator
                                     .comparing(item -> getDistanceBetween(bot,item)))
                                     .collect(Collectors.toList());       
@@ -79,16 +79,21 @@ public class BotService {
             }
             return;
         }
-        else if (!dangerousPlayerList.isEmpty() || !avoidObjectList.isEmpty()){
+        else if (!dangerousPlayerList.isEmpty()){
             //Jika terdeteksi bot yang lebih besar
-            if (!dangerousPlayerList.isEmpty()){
-                this.playerAction = avoidPlayer(dangerousPlayerList);
-            }
-
+            this.playerAction = avoidPlayer(dangerousPlayerList);
+            return;
+        }
+        else if (!avoidObjectList.isEmpty()){
             //Jika terdeteksi benda berbahaya
-            if (!avoidObjectList.isEmpty()) {
-                this.playerAction = avoidPlayer(avoidObjectList);
-            }
+            this.playerAction = avoidObject(avoidObjectList);
+            return;
+        }
+
+        if(this.afterburnerStatus) {
+            this.afterburnerStatus = false;
+            playerAction.action = PlayerActions.STOPAFTERBURNER;
+            this.playerAction = playerAction;
             return;
         }
 
@@ -100,36 +105,37 @@ public class BotService {
 
     public PlayerAction avoidPlayer(List<GameObject> dangerousPlayerList){
         GameObject nearestPlayer = dangerousPlayerList.get(0);
-        int worldRadius = getWorldRadius();
-        double botRadius = getBotRadius();
         int botSize = getBot().getSize();
 
-        if(getDistanceBetween(bot,nearestPlayer) < 0.2*worldRadius){
-            if (botSize > 50){
-                if(this.getBot().torpedoSalvoCount == 5){
-                    playerAction.heading = getHeadingBetween(nearestPlayer);
-                    playerAction.action = PlayerActions.FIRETORPEDOES;
-                }
-                else {
-                    playerAction.heading = (getHeadingBetween(nearestPlayer)+180)%360;
-                    playerAction.action = PlayerActions.STARTAFTERBURNER;
-                    this.afterburnerStatus = true;
-                }
-                
+        if (botSize > 50){
+            if(this.getBot().torpedoSalvoCount == 5){
+                playerAction.heading = getHeadingBetween(nearestPlayer);
+                playerAction.action = PlayerActions.FIRETORPEDOES;
             }
-            else {
+            else if (botSize >40){
                 playerAction.heading = (getHeadingBetween(nearestPlayer)+180)%360;
                 playerAction.action = PlayerActions.STARTAFTERBURNER;
                 this.afterburnerStatus = true;
             }
-            return playerAction;
+            else {
+                playerAction.heading = (getHeadingBetween(nearestPlayer)+180)%360;
+                playerAction.action = PlayerActions.FORWARD;
+            }
         }
         else {
-            this.afterburnerStatus = false;
-            playerAction.action = PlayerActions.FORWARD;
-            return playerAction;
-        }
+            if(botSize > 40) {
+                playerAction.heading = (getHeadingBetween(nearestPlayer)+180)%360;
+                playerAction.action = PlayerActions.STARTAFTERBURNER;
+                this.afterburnerStatus = true;
+            }
+            else{
+                playerAction.heading = (getHeadingBetween(nearestPlayer)+180)%360;
+                playerAction.action = PlayerActions.FORWARD;
+            }
+        }   
+        return playerAction;
     }
+
 
     public PlayerAction avoidObject(List<GameObject> avoidObjectList){
         GameObject nearestObject = avoidObjectList.get(0);
