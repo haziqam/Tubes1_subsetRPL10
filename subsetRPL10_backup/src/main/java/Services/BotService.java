@@ -12,6 +12,7 @@ public class BotService {
     private PlayerAction playerAction;
     private GameState gameState;
     private boolean afterburnerStatus;
+    private int tickTracker = 0;
 
     public BotService() {
         this.playerAction = new PlayerAction();
@@ -36,11 +37,12 @@ public class BotService {
     }
 
     public void computeNextPlayerAction(PlayerAction playerAction) {
+        // var objectList = gameState.getGameObjects();
        
         int worldRadius = getWorldRadius();
         double botRadius = getBotRadius();
         int botSize = getBot().getSize();
-        double nearRadius = 0.15 * worldRadius; 
+        double nearRadius = 0.2 * worldRadius; 
 
         List<GameObject> playerList = gameState.getPlayerGameObjects().stream()
                                     .sorted((Comparator
@@ -48,9 +50,9 @@ public class BotService {
                                     .collect(Collectors.toList());
 
         List<GameObject> nearbyObjectList = gameState.getGameObjects()
-                                            .stream().filter(item -> getEffectiveDistanceTo(item) <= nearRadius)
+                                            .stream().filter(item -> getDistanceBetween(bot, item) <= nearRadius)
                                             .sorted(Comparator
-                                            .comparing(item -> getEffectiveDistanceTo(item)))
+                                            .comparing(item -> item.getGameObjectType().getProfit()))
                                             .collect(Collectors.toList());       
 
         if (worldRadius == 0 || playerList == null) {
@@ -58,8 +60,6 @@ public class BotService {
             return;
         }
 
-        int tick = gameState.getWorld().getCurrentTick();
-        System.out.println(tick);
         playerList.remove(0);   
         //elemen pertama dihapus karena bot terdekat adalah bot sendiri, jadi tidak dijadikan pertimbangan
 
@@ -67,17 +67,16 @@ public class BotService {
                                             .filter(player -> this.getEffectiveDistanceTo(player) <= nearRadius)
                                             .collect(Collectors.toList());
 
-
         if (!nearbyPlayerList.isEmpty()) {
             boolean allSmaller = true;
             GameObject largestEdiblePlayer = null;
             GameObject dangerousPlayer = null;
             int maxPlayerSize = -1;
 
-            //System.out.println(this.getBot().torpedoSalvoCount);
+            System.out.println(this.getBot().torpedoSalvoCount);
 
             for (GameObject player : nearbyPlayerList) {
-                if (player.getSize() > botSize) {
+                if (player.getSize() > this.getBot().getSize()) {
                     dangerousPlayer = player;
                     allSmaller = false;
                     break;
@@ -93,11 +92,11 @@ public class BotService {
                 playerAction.action = PlayerActions.FORWARD;
             }
             else {
-                if (botSize > 50) {
-                    if (this.getBot().torpedoSalvoCount > 0) {
+                if (this.getBot().getSize() > 50) {
+                    if (this.getBot().torpedoSalvoCount == 5) {
                         playerAction.heading = getHeadingBetween(dangerousPlayer);
                         playerAction.action = PlayerActions.FIRETORPEDOES;
-                        
+                        tickTracker++;
                     }
                     else {
                         playerAction.heading = (getHeadingBetween(dangerousPlayer) + 180) % 360;
@@ -129,112 +128,50 @@ public class BotService {
             return;
         }
         
-        if (botSize >= 50) {
-            if (this.getBot().torpedoSalvoCount == 5 && tick % 5 == 0) {
+        if (this.getBot().getSize() >= 50) {
+            if (this.getBot().torpedoSalvoCount == 5 && tickTracker % 10 == 0) {
                 GameObject targetBot = playerList.stream()
                                         .max(Comparator.comparing(player -> player.getSize()))
                                         .get();
                 playerAction.heading =  getHeadingBetween(targetBot);
                 playerAction.action = PlayerActions.FIRETORPEDOES;
+                tickTracker++;
                 this.playerAction = playerAction;
                 return;
             }   
         }
 
         if (!nearbyObjectList.isEmpty()) {
-            boolean isSafe = true;
-            GameObject mostProfitableObj = null;
-            GameObject dangerousObj = null;
-            int maxProfit = -1;
+            GameObject mostDangerousObj = nearbyObjectList.get(nearbyObjectList.size()-1);
+            GameObject mostProfitableObj = nearbyObjectList.get(0);
 
-            for (GameObject obj : nearbyObjectList) {
-                if (obj.getGameObjectType().getProfit() < 0) {
-                    isSafe = false;
-                    dangerousObj = obj;
-                    break;
-                }
-                else if (obj.getGameObjectType().getProfit() > maxProfit) {
-                    maxProfit = obj.getGameObjectType().getProfit();
-                    mostProfitableObj = obj;
-                }
-            }
-
-            if (isSafe) {
-                playerAction.heading = getHeadingBetween(mostProfitableObj);
+            if (mostDangerousObj.getGameObjectType() == ObjectTypes.SUPERNOVABOMB) {
+                playerAction.heading = (getHeadingBetween(mostDangerousObj) + 90) % 360;
                 playerAction.action = PlayerActions.FORWARD;
-                this.playerAction = playerAction;
             }
-            else {
-                ObjectTypes x = dangerousObj.getGameObjectType();
-                if (x == ObjectTypes.SUPERNOVABOMB) {
-                    playerAction.heading = (getHeadingBetween(dangerousObj) + 90) % 360;
-                    playerAction.action = PlayerActions.FORWARD;
-                    this.playerAction = playerAction;
-                }
-                        
-                else if (x == ObjectTypes.TORPEDOSALVO) {
-                    playerAction.heading = (getHeadingBetween(dangerousObj) + 90) % 360;
-                    if (botSize > 50 && this.getBot().shieldCount > 0) {
+            else if (mostDangerousObj.getGameObjectType() == ObjectTypes.TORPEDOSALVO) {
+                if (this.getBot().getSize() > 50) {
+                    if (this.getBot().shieldCount > 0) {
                         playerAction.action = PlayerActions.USESHIELD;
                     }
-                    else {
-                        playerAction.action = PlayerActions.FORWARD;
-                    }
-                    this.playerAction = playerAction;
                 }
-                        
-                else if (x == ObjectTypes.GASCLOUD) {
-                    if (getEffectiveDistanceTo(dangerousObj) <= 0) {
-                        playerAction.heading = getHeadingToCenter();
-                        playerAction.action = PlayerActions.FORWARD;
-                    }
-                    else {
-                        playerAction.heading = (getHeadingBetween(dangerousObj) + 120) % 360;
-                        playerAction.action = playerAction.action = PlayerActions.FORWARD;
-                    }
-                    this.playerAction = playerAction;
-                }
-                    
                 else {
-                    playerAction.heading = (getHeadingBetween(dangerousObj) + 120) % 360;
-                    playerAction.action = playerAction.action = PlayerActions.FORWARD;
-                    this.playerAction = playerAction;
-                }   
-                return;       
+                    playerAction.heading = (getHeadingBetween(mostDangerousObj) + 90) % 360;
+                    playerAction.action = PlayerActions.FORWARD;
+                }
             }
-                
-
-            // GameObject mostDangerousObj = nearbyObjectList.get(nearbyObjectList.size()-1);
-            // GameObject mostProfitableObj = nearbyObjectList.get(0);
-
-            // if (mostDangerousObj.getGameObjectType() == ObjectTypes.SUPERNOVABOMB) {
-            //     playerAction.heading = (getHeadingBetween(mostDangerousObj) + 90) % 360;
-            //     playerAction.action = PlayerActions.FORWARD;
-            // }
-            // else if (mostDangerousObj.getGameObjectType() == ObjectTypes.TORPEDOSALVO) {
-            //     if (this.getBot().getSize() > 50) {
-            //         if (this.getBot().shieldCount > 0) {
-            //             playerAction.action = PlayerActions.USESHIELD;
-            //         }
-            //     }
-            //     else {
-            //         playerAction.heading = (getHeadingBetween(mostDangerousObj) + 90) % 360;
-            //         playerAction.action = PlayerActions.FORWARD;
-            //     }
-            // }
-            // // mungkin bisa diganti jadi if gascloud in nearby objectlist
-            // else if (mostDangerousObj.getGameObjectType() == ObjectTypes.GASCLOUD) {
-            //     playerAction.heading = (getHeadingBetween(mostDangerousObj) + 180) % 360;
-            //     playerAction.action = PlayerActions.FORWARD;
-            // }
-            // else {
-            //     playerAction.heading = getHeadingBetween(mostProfitableObj);
-            //     playerAction.action = PlayerActions.FORWARD;
-            // }
-            playerAction.action = PlayerActions.FORWARD;
+            // mungkin bisa diganti jadi if gascloud in nearby objectlist
+            else if (mostDangerousObj.getGameObjectType() == ObjectTypes.GASCLOUD) {
+                playerAction.heading = (getHeadingBetween(mostDangerousObj) + 180) % 360;
+                playerAction.action = PlayerActions.FORWARD;
+            }
+            else {
+                playerAction.heading = getHeadingBetween(mostProfitableObj);
+                playerAction.action = PlayerActions.FORWARD;
+            }
             this.playerAction = playerAction;
             return;
-    }
+        }
        
        // Default action jika tidak ada kondisi di atas yang memenuhi: FORWARD
         playerAction.action = PlayerActions.FORWARD;

@@ -3,13 +3,13 @@ package Enums;
 public enum ObjectTypes {
   PLAYER(1, 0),
   FOOD(2, 2),
-  WORMHOLE(3, -2),
-  GASCLOUD(4, -4),
+  WORMHOLE(3, 0),
+  GASCLOUD(4, -2),
   ASTEROIDFIELD(5, -1),
   TORPEDOSALVO(6, -3),
   SUPERFOOD(7, 4),
   SUPERNOVAPICKUP(8, 1),
-  SUPERNOVABOMB(9, -5),
+  SUPERNOVABOMB(9, -4),
   TELEPORTER(10, 0),
   SHIELD(11, 3);
   
