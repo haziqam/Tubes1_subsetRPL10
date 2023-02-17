@@ -1,10 +1,10 @@
 # Tubes 1 Strategi ALgoritma Kelompok subsetRPL10
 
 ## Table Of Contents
-*[Penjelasan Singkat Algoritma](#penjelasan-singkat-algoritma)
-*[Requirement Program](#requirement-program)
-*[Command untuk Meng-compile Program](#command-untuk-meng-compile-program)
-*[Identitas Pembuat](#identitas-pembuat)
+* [Penjelasan Singkat Algoritma](#penjelasan-singkat-algoritma)
+* [Requirement Program](#requirement-program)
+* [Command untuk Meng-compile Program](#command-untuk-meng-compile-program)
+* [Identitas Pembuat](#identitas-pembuat)
 
 ## Penjelasan Singkat Algoritma
 

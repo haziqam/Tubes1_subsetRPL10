@@ -138,8 +138,15 @@ public class BotService {
 
         if (!goodList.isEmpty()){
             GameObject priority = goodList.get(0);
-            playerAction.heading = getHeadingBetween(priority);
-            playerAction.action = PlayerActions.FORWARD;
+            GameObject priority2 = goodList.get(1);
+            if(getDistanceBetween(bot,priority) == getDistanceBetween(priority2, priority2)){
+                playerAction.heading = getHeadingBetween(priority);
+                playerAction.action = PlayerActions.FORWARD;
+            }
+            else{
+                playerAction.heading = getHeadingBetween(priority);
+                playerAction.action = PlayerActions.FORWARD;
+            }
             return;
         }
 
