@@ -52,8 +52,25 @@ public class BotService {
                                     .filter(item -> ((item.getGameObjectType() == ObjectTypes.GASCLOUD || item.getGameObjectType() == ObjectTypes.TORPEDOSALVO || item.getGameObjectType() == ObjectTypes.SUPERNOVABOMB || item.getGameObjectType() == ObjectTypes.ASTEROIDFIELD) && getDistanceBetween(bot,item) < 0.2*worldRadius))
                                     .sorted(Comparator
                                     .comparing(item -> getDistanceBetween(bot,item)))
-                                    .collect(Collectors.toList());       
+                                    .collect(Collectors.toList());
+        
+        //List yang berisi object yang menguntungkan
+        List<GameObject> goodList = gameState.getGameObjects().stream()
+                                    .filter(item -> (item.getGameObjectType() == ObjectTypes.FOOD || item.getGameObjectType() == ObjectTypes.SUPERFOOD || item.getGameObjectType() == ObjectTypes.SUPERNOVAPICKUP))
+                                    .sorted(Comparator
+                                    .comparing(item -> item.getGameObjectType().getProfit()))
+                                    .collect(Collectors.toList());
+        
+        //List yang berisi pemain yang dapat dimakan
+        List<GameObject> ediblePlayerList = gameState.getPlayerGameObjects().stream()
+                                    .filter(item -> item.getSize() < botSize)
+                                    .sorted((Comparator
+                                    .comparing(item -> item.getSize())))
+                                    .collect(Collectors.toList());
 
+        List<GameObject> teleporterList = gameState.getPlayerGameObjects().stream()
+                                    .filter(item -> item.getGameObjectType() == ObjectTypes.TELEPORTER)
+                                    .collect(Collectors.toList());
         if (worldRadius == 0 || dangerousPlayerList == null) {
             //selama delay tidak perlu mengganti action atau heading
             return;
@@ -97,6 +114,35 @@ public class BotService {
             return;
         }
 
+        //Tidak ada yang perlu dihindari, bot bisa mencari objek yang menguntungkan
+        
+        if(!ediblePlayerList.isEmpty() ){
+            GameObject priority = ediblePlayerList.get(0);
+
+            if(!teleporterList.isEmpty()) {
+                if(getDistanceBetween(teleporterList.get(0), priority) < 10) {
+                    playerAction.action = PlayerActions.TELEPORT;
+                    playerAction.heading = getHeadingBetween(priority);
+                }
+            }
+            else if(this.getBot().teleporterCount > 0 && (botSize - priority.getSize() >30)){
+                playerAction.action = PlayerActions.FIRETELEPORTER;
+                playerAction.heading = getHeadingBetween(priority);
+            }
+            else {
+                playerAction.heading = getHeadingBetween(priority);
+                playerAction.action = PlayerActions.FORWARD;
+            }
+            return;
+        }
+
+        if (!goodList.isEmpty()){
+            GameObject priority = goodList.get(0);
+            playerAction.heading = getHeadingBetween(priority);
+            playerAction.action = PlayerActions.FORWARD;
+            return;
+        }
+
        // Default action jika tidak ada kondisi di atas yang memenuhi: FORWARD
         playerAction.action = PlayerActions.FORWARD;
         this.playerAction = playerAction;
@@ -107,31 +153,25 @@ public class BotService {
         GameObject nearestPlayer = dangerousPlayerList.get(0);
         int botSize = getBot().getSize();
 
+
         if (botSize > 50){
             if(this.getBot().torpedoSalvoCount == 5){
                 playerAction.heading = getHeadingBetween(nearestPlayer);
                 playerAction.action = PlayerActions.FIRETORPEDOES;
-            }
-            else if (botSize >40){
-                playerAction.heading = (getHeadingBetween(nearestPlayer)+180)%360;
-                playerAction.action = PlayerActions.STARTAFTERBURNER;
-                this.afterburnerStatus = true;
             }
             else {
                 playerAction.heading = (getHeadingBetween(nearestPlayer)+180)%360;
                 playerAction.action = PlayerActions.FORWARD;
             }
         }
+        else if (botSize >40){
+            playerAction.heading = (getHeadingBetween(nearestPlayer)+180)%360;
+            playerAction.action = PlayerActions.STARTAFTERBURNER;
+            this.afterburnerStatus = true;
+        }
         else {
-            if(botSize > 40) {
-                playerAction.heading = (getHeadingBetween(nearestPlayer)+180)%360;
-                playerAction.action = PlayerActions.STARTAFTERBURNER;
-                this.afterburnerStatus = true;
-            }
-            else{
-                playerAction.heading = (getHeadingBetween(nearestPlayer)+180)%360;
-                playerAction.action = PlayerActions.FORWARD;
-            }
+            playerAction.heading = (getHeadingBetween(nearestPlayer)+180)%360;
+            playerAction.action = PlayerActions.FORWARD;
         }   
         return playerAction;
     }
