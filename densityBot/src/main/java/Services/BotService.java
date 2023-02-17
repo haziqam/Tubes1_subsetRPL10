@@ -229,7 +229,7 @@ public class BotService {
                     } else {
                         playerAction = action(PLY.get(maks), playerAction);
                     }
-                    // }
+                    
                 } else {
                     playerAction.action = PlayerActions.FORWARD;
                 }
